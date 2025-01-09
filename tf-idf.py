@@ -5,16 +5,22 @@ import re
 from collections import Counter
 from nltk.corpus import stopwords
 import nltk
-
+from bs4 import BeautifulSoup
 # Download the stop words list
 nltk.download('stopwords')
 # Real dataset works
-df = pd.read_csv("spam.csv")
+df = pd.read_csv("data.csv")
 def clean_text(text):
     # Remove non-alphabetic characters
     text = re.sub(r'[^a-zA-Z\s]', '', text, re.I|re.A)
     # Remove digits
     text = re.sub(r'\d+', '', text)
+    # Remove html tags
+    text = BeautifulSoup(text, "html.parser").get_text()
+    # Remove sequences of more than two 'z' characters
+    text = re.sub(r'z{3,}', '', text, flags=re.IGNORECASE)
+    # Remove 'br' tags
+    text = re.sub(r'\bbr\b', '', text, flags=re.IGNORECASE)
     # Split text into words
     words = text.split()
     # Get the list of stop words
@@ -32,8 +38,11 @@ feature_names = tf_idf_vectorizer.get_feature_names_out()
 tf_idf_score=X.mean(axis=0).A1
 
 tf_idf = pd.DataFrame({"word":feature_names, "score":tf_idf_score})
+# Sort the DataFrame by tf-idf score in descending order
+tf_idf_sorted = tf_idf.sort_values(by="score", ascending=False)
+# Get the 5 most important words
 print(Counter(dict(zip(feature_names, tf_idf_score))).most_common(5))
-print(tf_idf)
+print(tf_idf_sorted)
 
 
 
